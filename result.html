@@ -5,30 +5,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>분석 결과 - 워해머 킬팀 테스트</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* 상위권 추천 카드 특별 스타일 */
+    .top-rank-card {
+      background: #1f242d;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .top-rank-card.rank-1 {
+      border-top: 4px solid var(--accent-orange);
+      background: linear-gradient(135deg, #1f242d 0%, #2a221b 100%);
+    }
+    .top-rank-card.rank-2 {
+      border-top: 4px solid var(--accent-gold);
+    }
+    .top-rank-card.rank-3 {
+      border-top: 4px solid #64748b;
+    }
+    .rank-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+    .rank-1 .rank-badge { background: rgba(230, 92, 0, 0.2); color: var(--accent-orange); border: 1px solid var(--accent-orange); }
+    .rank-2 .rank-badge { background: rgba(197, 160, 89, 0.2); color: var(--accent-gold); border: 1px solid var(--accent-gold); }
+    .rank-3 .rank-badge { background: rgba(100, 116, 139, 0.2); color: #94a3b8; border: 1px solid #64748b; }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <span class="badge">RECOMMENDED KILL TEAM</span>
-    <h1 id="res-name">결과 분석 중...</h1>
-    <p id="res-group"></p>
+  <div class="container" style="max-width: 760px;">
+    <span class="badge">KILL TEAM RECOMMENDATION RESULTS</span>
+    <h1>당신에게 가장 어울리는 킬팀 TOP 3</h1>
+    <p>성향 분석 결과를 바탕으로 가장 높은 궁합을 보인 3가지 킬팀입니다.</p>
 
-    <div class="result-box">
-      <div class="stat-row">
-        <span><strong>플레이 방식</strong></span>
-        <span id="res-style"></span>
-      </div>
-      <div class="stat-row">
-        <span><strong>취향 키워드</strong></span>
-        <span id="res-taste"></span>
-      </div>
-    </div>
+    <!-- 상위 1~3위 카드 영역 -->
+    <div id="top-factions-container"></div>
 
-    <p id="res-desc" style="color: #e2e8f0; font-size: 1.05rem;"></p>
-
-    <button class="btn btn-primary" onclick="restartTest()">처음으로 돌아가기</button>
+    <button class="btn btn-primary" onclick="restartTest()" style="margin-bottom: 32px;">처음으로 돌아가기</button>
 
     <div class="all-factions">
-      <h2>전체 킬팀 팩션 도감 및 적합도</h2>
+      <h2>전체 36개 팩션 도감 및 순위</h2>
       <div id="all-factions-list"></div>
     </div>
   </div>
@@ -60,28 +82,54 @@
 
       // 점수 순 정렬
       const sortedFactions = Object.keys(scores).sort((a, b) => scores[b] - scores[a]);
-      const bestKey = sortedFactions[0];
-      const bestFaction = FACTIONS[bestKey];
 
-      // 1위 팩션 렌더링
-      document.getElementById('res-name').innerText = bestFaction.name;
-      document.getElementById('res-group').innerText = bestFaction.group;
-      document.getElementById('res-style').innerText = bestFaction.style;
-      document.getElementById('res-taste').innerText = bestFaction.taste;
-      document.getElementById('res-desc').innerText = bestFaction.desc;
+      // 1~3위 카드 렌더링
+      const topContainer = document.getElementById('top-factions-container');
+      topContainer.innerHTML = '';
 
-      // 전체 팩션 도감 및 획득 점수 출력
+      for (let i = 0; i < 3; i++) {
+        if (i >= sortedFactions.length) break;
+        const key = sortedFactions[i];
+        const f = FACTIONS[key];
+        const rankClass = `rank-${i + 1}`;
+        const rankTitle = `${i + 1}위 추천 킬팀`;
+
+        const card = document.createElement('div');
+        card.className = `top-rank-card ${rankClass}`;
+        card.innerHTML = `
+          <span class="rank-badge">${rankTitle} (매칭 점수: ${scores[key]}점)</span>
+          <h2 style="font-size: 1.4rem; color: #ffffff; margin-bottom: 4px;">${f.name}</h2>
+          <p style="color: var(--accent-gold); font-size: 0.9rem; margin-bottom: 14px;">${f.group}</p>
+          
+          <div class="result-box" style="margin-bottom: 14px; background: #14171d;">
+            <div class="stat-row">
+              <span><strong>플레이 방식</strong></span>
+              <span>${f.style}</span>
+            </div>
+            <div class="stat-row">
+              <span><strong>취향 키워드</strong></span>
+              <span>${f.taste}</span>
+            </div>
+          </div>
+          <p style="color: #e2e8f0; font-size: 0.95rem; margin-bottom: 0;">${f.desc}</p>
+        `;
+        topContainer.appendChild(card);
+      }
+
+      // 전체 36개 팩션 도감 렌더링
       const listContainer = document.getElementById('all-factions-list');
+      listContainer.innerHTML = '';
+      
       sortedFactions.forEach((key, idx) => {
         const f = FACTIONS[key];
         const card = document.createElement('div');
         card.className = 'faction-mini-card';
         card.innerHTML = `
           <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-            <strong style="color: ${idx === 0 ? '#e65c00' : '#ffffff'};">${idx + 1}위. ${f.name}</strong>
-            <span style="color: #94a3b8; font-size:0.85rem;">매칭 점수: ${scores[key]}점</span>
+            <strong style="color: ${idx < 3 ? 'var(--accent-orange)' : '#ffffff'};">${idx + 1}위. ${f.name}</strong>
+            <span style="color: #94a3b8; font-size:0.85rem;">점수: ${scores[key]}점</span>
           </div>
-          <div style="font-size:0.85rem; color:#94a3b8;">${f.style} | ${f.taste}</div>
+          <div style="font-size:0.85rem; color:#94a3b8;">${f.group} | ${f.style}</div>
         `;
         listContainer.appendChild(card);
       });
