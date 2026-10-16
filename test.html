@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>성향 분석 중 - 킬팀 테스트</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <span class="badge" id="q-counter">QUESTION 1 / 6</span>
+    <h2 id="q-title">질문을 불러오는 중입니다...</h2>
+
+    <div class="options-list" id="options-container"></div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" id="prev-btn" onclick="goPrev()">이전 문항</button>
+      <button class="btn btn-primary" id="next-btn" onclick="goNext()" disabled>다음 문항</button>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    let currentIndex = 0;
+    // 각 문항별 선택한 보기 번호(0~3)를 저장하는 배열 (미선택 시 null)
+    let userAnswers = new Array(QUESTIONS.length).fill(null);
+
+    function renderQuestion() {
+      const qData = QUESTIONS[currentIndex];
+      document.getElementById('q-counter').innerText = `QUESTION ${currentIndex + 1} / ${QUESTIONS.length}`;
+      document.getElementById('q-title').innerText = qData.q;
+
+      // 진행도 업데이트
+      const progressPercent = ((currentIndex + 1) / QUESTIONS.length) * 100;
+      document.getElementById('progress-fill').style.width = `${progressPercent}%`;
+
+      // 보기 버튼 생성
+      const container = document.getElementById('options-container');
+      container.innerHTML = '';
+
+      qData.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        if (userAnswers[currentIndex] === idx) {
+          btn.classList.add('selected');
+        }
+        btn.innerText = opt.text;
+        btn.onclick = () => selectOption(idx);
+        container.appendChild(btn);
+      });
+
+      // 이전/다음 버튼 상태 업데이트
+      document.getElementById('prev-btn').disabled = (currentIndex === 0);
+      
+      const nextBtn = document.getElementById('next-btn');
+      nextBtn.innerText = (currentIndex === QUESTIONS.length - 1) ? '결과 확인하기' : '다음 문항';
+      // 선택된 값이 없으면 다음 버튼 비활성화
+      nextBtn.disabled = (userAnswers[currentIndex] === null);
+    }
+
+    function selectOption(optionIndex) {
+      // 하나만 선택되도록 현재 문항의 답안 갱신
+      userAnswers[currentIndex] = optionIndex;
+      renderQuestion();
+    }
+
+    function goPrev() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        renderQuestion();
+      }
+    }
+
+    function goNext() {
+      // 선택하지 않았으면 넘어가지 못하도록 이중 방어
+      if (userAnswers[currentIndex] === null) return;
+
+      if (currentIndex < QUESTIONS.length - 1) {
+        currentIndex++;
+        renderQuestion();
+      } else {
+        // 마지막 문항 완료 시 답안 저장 후 결과 페이지로 이동
+        localStorage.setItem('kt_answers', JSON.stringify(userAnswers));
+        window.location.href = 'result.html';
+      }
+    }
+
+    // 초기 렌더링
+    renderQuestion();
+  </script>
+</body>
+</html>
